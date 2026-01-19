@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>مسابقة القرآن الكريم</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  direction: rtl;
+  text-align: center;
+  margin: 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  transition: 0.4s;
+}
+
+.dark { background: linear-gradient(135deg, #000428, #004e92); color: #fff; }
+
+.container {
+  background: #fff;
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+  animation: fadeIn 1s ease;
+}
+
+.dark .container { background: #1e293b; color: #fff; }
+
+@keyframes fadeIn { from {opacity:0; transform:translateY(20px);} to {opacity:1; transform:translateY(0);} }
+
+h2 { color: #1e3c72; }
+.dark h2 { color: #60a5fa; }
+
+input, button { padding: 10px; margin: 6px; border-radius: 8px; border:1px solid #ccc; font-size:15px; }
+button { background:#1e3c72; color:white; cursor:pointer; transition:0.3s; }
+button:hover { transform: scale(1.05); background:#16305a; }
+
+table { width: 100%; margin-top: 10px; border-collapse: collapse; }
+th { background:#1e3c72; color:white; padding:10px; }
+td { padding:10px; border-bottom:1px solid #ddd; }
+tr:hover { background: rgba(0,0,0,0.05); }
+
+.first { background: linear-gradient(90deg,#ffd700,#fff3a0); font-weight:bold; }
+.second { background: linear-gradient(90deg,#c0c0c0,#eeeeee); }
+.third { background: linear-gradient(90deg,#cd7f32,#e6a15c); }
+.medal { font-size:20px; }
+
+.level-title { font-size:20px; margin-top:30px; color:#1e3c72; }
+.dark .level-title { color:#60a5fa; }
+
+@media(max-width:600px){ input{width:90%; } }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>📖 مسابقة القرآن الكريم</h2>
+
+<div class="top-buttons">
+  <button onclick="toggleDark()">🌙 / ☀️</button>
+  <button onclick="window.print()">🖨️ طباعة</button>
+</div>
+
+<input id="name" placeholder="اسم الطالب">
+<input id="level" list="levels" placeholder="مستوى الحفظ">
+<datalist id="levels">
+  <option value="القرآن كامل">
+  <option value="20 جزءًا من القرآن">
+  <option value="نصف القرآن">
+  <option value="ربع القرآن">
+  <option value="ثلاثة أجزاء من القرآن">
+</datalist>
+
+<input id="score" type="number" placeholder="الدرجة">
+<br>
+<button onclick="addStudent()">➕ إضافة</button>
+
+<div id="results"></div>
+</div>
+
+<script>
+let students = JSON.parse(localStorage.getItem("students")) || [];
+
+function save(){ localStorage.setItem("students", JSON.stringify(students)); }
+function toggleDark(){ document.body.classList.toggle("dark"); }
+
+function addStudent(){
+  let name=document.getElementById("name").value;
+  let level=document.getElementById("level").value;
+  let score=document.getElementById("score").value;
+  if(!name || !level || !score){ alert("اكمل البيانات"); return; }
+  students.push({name, level, score:Number(score)});
+  sortAndShow();
+  document.getElementById("name").value="";
+  document.getElementById("level").value="";
+  document.getElementById("score").value="";
+}
+
+function sortAndShow(){
+  save();
+  const results=document.getElementById("results");
+  results.innerHTML="";
+
+  // احصل على كل المستويات الموجودة
+  let levels=[...new Set(students.map(s=>s.level))];
+
+  levels.forEach(level=>{
+    results.innerHTML+=`<div class="level-title">${level}</div>
+    <table>
+      <thead><tr>
+        <th>المركز</th>
+        <th>الاسم</th>
+        <th>الدرجة</th>
+        <th>تحكم</th>
+      </tr></thead>
+      <tbody id="table-${level.replace(/ /g,'')}"></tbody>
+    </table>`;
+
+    let tableBody=document.getElementById(`table-${level.replace(/ /g,'')}`);
+    let levelStudents=students.filter(s=>s.level===level).sort((a,b)=>b.score-a.score);
+
+    levelStudents.forEach((s,i)=>{
+      let medal="",cls="";
+      if(i===0){ medal="🥇"; cls="first"; }
+      if(i===1){ medal="🥈"; cls="second"; }
+      if(i===2){ medal="🥉"; cls="third"; }
+
+      tableBody.innerHTML+=`
+      <tr class="${cls}">
+        <td class="medal">${medal} ${i+1}</td>
+        <td>${s.name}</td>
+        <td>${s.score}</td>
+        <td>
+          <button onclick="edit('${level}',${i})">✏️</button>
+          <button onclick="removeStudent('${level}',${i})">❌</button>
+        </td>
+      </tr>`;
+    });
+  });
+}
+
+function removeStudent(level,i){
+  let idx=students.findIndex((s)=>s.level===level && students.filter(st=>st.level===level)[i]===s);
+  if(idx>=0){ students.splice(idx,1); sortAndShow(); }
+}
+
+function edit(level,i){
+  let filtered=students.filter(s=>s.level===level);
+  let student=filtered[i];
+  let idx=students.indexOf(student);
+  let newScore=prompt("الدرجة الجديدة", student.score);
+  if(newScore!==null){ students[idx].score=Number(newScore); sortAndShow(); }
+}
+
+sortAndShow();
+</script>
+</body>
+</html>
